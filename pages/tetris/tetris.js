@@ -1,22 +1,37 @@
 // Código JavaScript para manejar el menú desplegable
-document.addEventListener('DOMContentLoaded', function() {
-    const dropdownButton = document.getElementById('dropdownButton');
-    const dropdownMenu = document.getElementById('dropdownMenu');
+// Código JavaScript para manejar el menú desplegable
+function toggleMenu() {
+    const container = document.querySelector('.menu-container');
+    container.classList.toggle('menu-open');
+}
+
+function selectItem(itemName) {
+    // Cerrar el menú después de seleccionar
+    const container = document.querySelector('.menu-container');
+    container.classList.remove('menu-open');
     
-    // Alternar el menú al hacer clic en el botón
-    dropdownButton.addEventListener('click', function() {
-        dropdownMenu.classList.toggle('show');
-    });
+    // Aquí puedes agregar lógica adicional si es necesario
+    console.log(`Seleccionado: ${itemName}`);
+}
+
+// Cerrar el menú al hacer clic fuera de él
+document.addEventListener('click', function(event) {
+    const container = document.querySelector('.menu-container');
+    const isClickInsideMenu = container.contains(event.target);
     
-    // Cerrar el menú si se hace clic fuera de él
-    window.addEventListener('click', function(event) {
-        if (!event.target.matches('.dropdown-button') && !event.target.closest('.dropdown-button')) {
-            if (dropdownMenu.classList.contains('show')) {
-                dropdownMenu.classList.remove('show');
-            }
-        }
-    });
+    if (!isClickInsideMenu && container.classList.contains('menu-open')) {
+        container.classList.remove('menu-open');
+    }
 });
+
+// Cerrar el menú con la tecla Escape
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const container = document.querySelector('.menu-container');
+        container.classList.remove('menu-open');
+    }
+});
+
 
 // Código JavaScript para el juego de Tetris
 // Configuración del juego

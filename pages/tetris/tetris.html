@@ -3,28 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tetris Game</title>
+    <title>Sudoku Game</title>
     <link rel="stylesheet" href="/pages/tetris/tetris.css">
 </head>
 <body>
-    <h1 class="titulo">Tetris</h1>
+    <h1 class="titulo">Tetris 🧩</h1>
 
-    <header>
-        <div class="dropdown-container">
-            <button class="dropdown-button" id="dropdownButton">
-                <svg class="menu-icon" viewBox="0 0 24 24" width="24" height="24">
-                    <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" fill="currentColor"/>
-                </svg>
-                <span>Menú</span>
-            </button>
-            <div class="dropdown-menu" id="dropdownMenu">
-                <a href="/pages/app.html">Inicio</a>
-                <a href="#">Sudoku</a>
-                <a href="#">Contacto</a>
-                <a href="#">Acerca de</a>
+    <!-- Menú desplegable animado -->
+    <div class="menu-container">
+        <div class="menu-toggle" onclick="toggleMenu()">
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
             </div>
         </div>
-    </header>
+        
+        <nav class="dropdown-menu" id="dropdownMenu">
+            <a href="/pages/app.html" class="menu-item" onclick="selectItem('Inicio')">
+                <svg class="menu-icon" viewBox="0 0 24 24">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+                Inicio
+            </a>
+            
+            <a href="#" class="menu-item" onclick="selectItem('Sudoku')">
+                <svg class="menu-icon" viewBox="0 0 24 24">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                </svg>
+                Sudoku
+            </a>
+            
+            <a href="https://www.chess.com/play/online" class="menu-item" onclick="selectItem('Ajedrez')">
+                <svg class="menu-icon" viewBox="0 0 24 24">
+                    <path d="M19 22H5v-2h14v2zm-2-3H7l.27-2h9.46L17 19zm-2.5-3h-5L9 14h6l-.5 2zm.5-3H9l.5-2h3l.5 2zm-2-3H11l.5-1h1l.5 1zm1-2h-3L12 8l1 2z"/>
+                </svg>
+                Ajedrez
+            </a>
+            
+            <a href="https://playtictactoe.org/" class="menu-item" onclick="selectItem('Triqui')">
+                <svg class="menu-icon" viewBox="0 0 24 24">
+                    <path d="M3 3v18h18V3H3zm16 16H5V5h14v14zM7 7h2v2H7V7zm4 0h2v2h-2V7zm4 0h2v2h-2V7zM7 11h2v2H7v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2zM7 15h2v2H7v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z"/>
+                </svg>
+                Triqui
+            </a>
+        </nav>
+    </div>
 
     <div class="game-container">
         <div class="game-board">
