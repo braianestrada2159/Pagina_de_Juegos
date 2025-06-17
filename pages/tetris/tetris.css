@@ -9,9 +9,10 @@
 
 .titulo {
     position: absolute;
+    font-size: 40px;
     top: 20px;
     left: 20px;
-    color: #2d3748;
+    color: #667eea;
     text-shadow: 0 2px 4px rgba(0,0,0,0.1);
     z-index: 10;
     margin: 0;

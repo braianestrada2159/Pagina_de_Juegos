@@ -1,5 +1,4 @@
 // Código JavaScript para manejar el menú desplegable
-// Código JavaScript para manejar el menú desplegable
 function toggleMenu() {
     const container = document.querySelector('.menu-container');
     container.classList.toggle('menu-open');
