@@ -31,16 +31,14 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
-
-
-
-// JavaScript para el juego de Triqui con variantes y modos de juego
 document.addEventListener('DOMContentLoaded', function() {
     // Elementos del DOM
     const gameModeSelect = document.getElementById('gameMode');
     const difficultySection = document.getElementById('difficultySection');
     const difficultySelect = document.getElementById('difficulty');
     const gameVariantSelect = document.getElementById('gameVariant');
+    const playersSection = document.getElementById('playersSection');
+    const playersConfig = document.getElementById('playersConfig');
     const startGameBtn = document.getElementById('startGame');
     const resetScoresBtn = document.getElementById('resetScores');
     const gameContainer = document.getElementById('gameBoard');
@@ -48,112 +46,207 @@ document.addEventListener('DOMContentLoaded', function() {
     const resetGameBtn = document.getElementById('resetGame');
     const scoreX = document.getElementById('scoreX');
     const scoreO = document.getElementById('scoreO');
+    const scoreY = document.getElementById('scoreY');
     const scoreTie = document.getElementById('scoreTie');
-    
+    const scoreYItem = document.getElementById('scoreYItem');
+    const scorePanel = document.getElementById('scorePanel');
+
     // Variables del juego
     let board = [];
     let currentPlayer = 'X';
+    let currentPlayerIndex = 0;
     let gameActive = false;
     let gameMode = 'pvp';
     let difficulty = 'medium';
     let gameVariant = 'classic';
-    let scores = { X: 0, O: 0, tie: 0 };
+    let players = [];
     let ultimateActiveBoard = null;
-    
+    const PLAYER_SYMBOLS = ['X', 'O', 'Y'];
+    let scores = { X: 0, O: 0, Y: 0, tie: 0 };
+
     // Cargar puntuaciones guardadas
     loadScores();
-    
+
+    // Ocultar todas las opciones al inicio excepto la variante
+    gameModeSelect.closest('.panel-section').style.display = 'none';
+    difficultySection.style.display = 'none';
+    playersSection.style.display = 'none';
+    startGameBtn.style.display = 'none';
+    resetScoresBtn.style.display = 'none';
+    resetGameBtn.style.display = 'none'; // Also hide reset game button initially
+    gameContainer.style.display = 'none'; // Hide game board initially
+    gameStatus.style.display = 'none'; // Hide game status initially
+    scorePanel.style.display = 'none'; // Hide score panel initially
+
     // Event listeners
     gameModeSelect.addEventListener('change', function() {
         gameMode = this.value;
         difficultySection.style.display = gameMode === 'pvc' ? 'block' : 'none';
     });
-    
+
     difficultySelect.addEventListener('change', function() {
         difficulty = this.value;
     });
-    
+
     gameVariantSelect.addEventListener('change', function() {
         gameVariant = this.value;
+        // Hide all options first
+        gameModeSelect.closest('.panel-section').style.display = 'none';
+        difficultySection.style.display = 'none';
+        playersSection.style.display = 'none';
+        scoreYItem.style.display = 'none';
+        startGameBtn.style.display = 'block';
+        resetScoresBtn.style.display = 'block';
+
+        if (gameVariant === 'classic' || gameVariant === 'ultimate') {
+            gameModeSelect.closest('.panel-section').style.display = 'block';
+            if (gameModeSelect.value === 'pvc') {
+                difficultySection.style.display = 'block';
+            }
+            scoreYItem.style.display = 'none';
+            scorePanel.classList.remove('extended'); // Ensure extended class is removed
+        } else if (gameVariant === 'extended') {
+            playersSection.style.display = 'block';
+            scoreYItem.style.display = 'flex';
+            scorePanel.classList.add('extended');
+            // For extended, game mode and difficulty are tied to player config
+            // The logic for displaying difficulty for AI players is handled within updatePlayersConfig and startGame
+            gameModeSelect.closest('.panel-section').style.display = 'none'; // Hide game mode for extended
+            difficultySection.style.display = 'none'; // Hide difficulty for extended initially
+        }
     });
-    
+
+    playersConfig.addEventListener('change', updatePlayersConfig);
+
     startGameBtn.addEventListener('click', startGame);
     resetGameBtn.addEventListener('click', resetGame);
     resetScoresBtn.addEventListener('click', resetScores);
-    
-    // Iniciar el juego
-    // Reemplazar las funciones startGame y resetGame con estas versiones mejoradas
-function startGame() {
-    gameMode = gameModeSelect.value;
-    difficulty = difficultySelect.value;
-    gameVariant = gameVariantSelect.value;
-    
-    resetBoard();
-    gameActive = true;
-    
-    // Selección aleatoria del primer jugador
-    currentPlayer = Math.random() < 0.5 ? 'X' : 'O';
-    
-    updateGameStatus();
-    
-    // Mostrar mensaje especial para el primer turno
-    const firstTurnMessage = currentPlayer === 'X' 
-        ? '¡Jugador X comienza la partida!' 
-        : gameMode === 'pvp' 
-            ? '¡Jugador O comienza la partida!' 
-            : '¡Computadora (O) comienza la partida!';
-    
-    gameStatus.textContent = firstTurnMessage;
-    gameStatus.classList.add('highlight-message');
-    
-    // Eliminar el resaltado después de 2 segundos
-    setTimeout(() => {
-        gameStatus.classList.remove('highlight-message');
-        updateGameStatus();
-        
-        // Si es modo vs computadora y comienza O
-        if (gameMode === 'pvc' && currentPlayer === 'O') {
-            setTimeout(makeComputerMove, 500);
-        }
-    }, 2000);
-}
 
-function resetGame() {
-    resetBoard();
-    gameActive = true;
-    ultimateActiveBoard = null;
-    
-    // Alternar el jugador inicial al reiniciar
-    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-    
-    // Mostrar mensaje de cambio de turno inicial
-    const switchMessage = currentPlayer === 'X' 
-        ? '¡Ahora comienza Jugador X!' 
-        : gameMode === 'pvp' 
-            ? '¡Ahora comienza Jugador O!' 
-            : '¡Ahora comienza la Computadora!';
-    
-    gameStatus.textContent = switchMessage;
-    gameStatus.classList.add('highlight-message');
-    
-    setTimeout(() => {
-        gameStatus.classList.remove('highlight-message');
-        updateGameStatus();
-        
-        if (gameMode === 'pvc' && currentPlayer === 'O') {
-            setTimeout(makeComputerMove, 500);
+    // Funciones del juego
+    function startGame() {
+        gameMode = gameModeSelect.value;
+        difficulty = difficultySelect.value;
+        gameVariant = gameVariantSelect.value;
+
+        if (gameVariant === 'extended') {
+            updatePlayersConfig();
         }
-    }, 2000);
-}
-    
+
+        resetBoard();
+        gameActive = true;
+
+        if (gameVariant === 'extended') {
+            currentPlayerIndex = Math.floor(Math.random() * 3);
+        } else {
+            currentPlayer = Math.random() < 0.5 ? 'X' : 'O';
+        }
+
+        // Mostrar el tablero inmediatamente para Ultimate
+        if (gameVariant === 'ultimate') {
+            gameContainer.style.display = 'grid';
+            gameContainer.style.visibility = 'visible';
+            gameContainer.style.opacity = '1';
+        }
+
+        // Show game elements
+        gameContainer.style.display = 'flex';
+        gameStatus.style.display = 'block';
+        scorePanel.style.display = 'flex';
+        resetGameBtn.style.display = 'block';
+
+        updateGameStatus();
+
+        const firstTurnMessage = getFirstTurnMessage();
+        gameStatus.innerHTML = firstTurnMessage;
+        gameStatus.classList.add('highlight-message');
+
+        setTimeout(() => {
+            gameStatus.classList.remove('highlight-message');
+            updateGameStatus();
+
+            if ((gameMode === 'pvc' && currentPlayer === 'O' && gameVariant !== 'extended') ||
+                (gameVariant === 'extended' && players[currentPlayerIndex] === 'ai')) {
+                setTimeout(gameVariant === 'extended' ? makeExtendedComputerMove : gameVariant === 'ultimate' ? makeUltimateComputerMove : makeComputerMove, 500);
+            }
+        }, 2000);
+    }
+
+    function getFirstTurnMessage() {
+        if (gameVariant === 'extended') {
+            const playerNumber = currentPlayerIndex + 1;
+            const symbol = PLAYER_SYMBOLS[currentPlayerIndex];
+            const playerType = players[currentPlayerIndex] === 'human' ? 'Jugador' : 'Computadora';
+            return `¡${playerType} ${playerNumber} (${symbol}) comienza la partida!`;
+        } else if (currentPlayer === 'X') {
+            return '¡Jugador X comienza la partida!';
+        } else {
+            return gameMode === 'pvp' ? '¡Jugador O comienza la partida!' : '¡Computadora (O) comienza la partida!';
+        }
+    }
+
+    function updatePlayersConfig() {
+        const config = playersConfig.value;
+        players = [];
+
+        if (config === '3human') {
+            players = ['human', 'human', 'human'];
+            difficultySection.style.display = 'none'; // No difficulty needed for 3 human players
+        } else if (config === '2human1ai') {
+            players = ['human', 'human', 'ai'];
+            difficultySection.style.display = 'block'; // Difficulty for 1 AI
+        } else { // 1human2ai
+            players = ['human', 'ai', 'ai'];
+            difficultySection.style.display = 'block'; // Difficulty for 2 AI
+        }
+    }
+
+    function resetGame() {
+        resetBoard();
+        gameActive = true;
+        ultimateActiveBoard = null;
+
+        if (gameVariant === 'extended') {
+            currentPlayerIndex = (currentPlayerIndex + 1) % 3;
+        } else {
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        }
+
+        const switchMessage = getSwitchMessage();
+        gameStatus.innerHTML = switchMessage;
+        gameStatus.classList.add('highlight-message');
+
+        setTimeout(() => {
+            gameStatus.classList.remove('highlight-message');
+            updateGameStatus();
+
+            if ((gameMode === 'pvc' && currentPlayer === 'O' && gameVariant !== 'extended') ||
+                (gameVariant === 'extended' && players[currentPlayerIndex] === 'ai')) {
+                setTimeout(gameVariant === 'extended' ? makeExtendedComputerMove : makeComputerMove, 500);
+            }
+        }, 2000);
+    }
+
+    function getSwitchMessage() {
+        if (gameVariant === 'extended') {
+            const playerNumber = currentPlayerIndex + 1;
+            const symbol = PLAYER_SYMBOLS[currentPlayerIndex];
+            const playerType = players[currentPlayerIndex] === 'human' ? 'Jugador' : 'Computadora';
+            return `¡Ahora comienza ${playerType} ${playerNumber} (${symbol})!`;
+        } else if (currentPlayer === 'X') {
+            return '¡Ahora comienza Jugador X!';
+        } else {
+            return gameMode === 'pvp' ? '¡Ahora comienza Jugador O!' : '¡Ahora comienza la Computadora!';
+        }
+    }
+
     function resetScores() {
         if (confirm('¿Estás seguro de que quieres resetear el historial de puntuaciones?')) {
-            scores = { X: 0, O: 0, tie: 0 };
+            scores = { X: 0, O: 0, Y: 0, tie: 0 };
             updateScoreDisplay();
             saveScores();
         }
     }
-    
+
     function loadScores() {
         const savedScores = localStorage.getItem('triquiScores');
         if (savedScores) {
@@ -161,179 +254,322 @@ function resetGame() {
             updateScoreDisplay();
         }
     }
-    
+
     function saveScores() {
         localStorage.setItem('triquiScores', JSON.stringify(scores));
     }
-    
+
     function updateScoreDisplay() {
         scoreX.textContent = scores.X;
         scoreO.textContent = scores.O;
+        scoreY.textContent = scores.Y;
         scoreTie.textContent = scores.tie;
     }
-    
+
+
     function resetBoard() {
         if (gameVariant === 'classic') {
             board = Array(9).fill(null);
             renderClassicBoard();
-        } else {
-            board = Array(9).fill().map(() => Array(9).fill(null));
+            // Forzar el renderizado inmediato
+            gameContainer.style.display = 'grid';
+            gameContainer.style.visibility = 'visible';
+            gameContainer.style.opacity = '1';
+        } else if (gameVariant === 'ultimate') {
+            board = Array.from({length: 9}, () => Array(9).fill(null));
+            ultimateActiveBoard = null;
             renderUltimateBoard();
+            // Forzar el renderizado inmediato
+            gameContainer.style.display = 'grid';
+            gameContainer.style.visibility = 'visible';
+            gameContainer.style.opacity = '1';
+        } else if (gameVariant === 'extended') {
+            board = Array(25).fill(null);
+            renderExtendedBoard();
+            // Forzar el renderizado inmediato
+            gameContainer.style.display = 'grid';
+            gameContainer.style.visibility = 'visible';
+            gameContainer.style.opacity = '1';
         }
     }
-    
+
     function renderClassicBoard() {
         gameContainer.innerHTML = '';
-        gameContainer.className = 'classic-board';
+        gameContainer.className = 'game-board classic-board';
         
         for (let i = 0; i < 9; i++) {
             const cell = document.createElement('div');
             cell.className = 'classic-cell';
             cell.dataset.index = i;
-            
+
             if (board[i]) {
                 cell.textContent = board[i];
                 cell.classList.add(board[i].toLowerCase());
             }
-            
+
             cell.addEventListener('click', () => handleCellClick(i));
             gameContainer.appendChild(cell);
         }
+        
+        // Forzar el renderizado
+        gameContainer.style.display = 'grid';
+        gameContainer.style.visibility = 'visible';
+        gameContainer.style.opacity = '1';
     }
-    
+
     function renderUltimateBoard() {
+        // Limpiar y preparar el contenedor
         gameContainer.innerHTML = '';
-        gameContainer.className = 'ultimate-board';
+        gameContainer.className = 'ultimate-board rendered visible'; // Asegurar todas las clases necesarias
+        gameContainer.style.display = 'grid';
+        gameContainer.style.visibility = 'visible';
+        gameContainer.style.opacity = '1';
+
+        // Crear estructura completa del tablero
+        const fragment = document.createDocumentFragment();
         
         for (let i = 0; i < 9; i++) {
             const miniBoard = document.createElement('div');
             miniBoard.className = 'mini-board';
             miniBoard.dataset.boardIndex = i;
             miniBoard.dataset.boardNumber = i + 1;
-            
-            const isActive = ultimateActiveBoard === null || ultimateActiveBoard === i;
+
             const miniBoardWinner = checkMiniBoardWinner(i);
-            
+            const isActive = ultimateActiveBoard === null || ultimateActiveBoard === i;
+
             for (let j = 0; j < 9; j++) {
                 const cell = document.createElement('div');
                 cell.className = 'mini-cell';
                 cell.dataset.boardIndex = i;
                 cell.dataset.cellIndex = j;
-                
+
                 if (board[i][j]) {
                     cell.textContent = board[i][j];
                     cell.classList.add(board[i][j].toLowerCase());
-                    
-                    if (miniBoardWinner) {
-                        const winningPattern = getWinningPattern(i);
-                        if (winningPattern.includes(j)) {
-                            cell.classList.add('winning-cell');
-                        }
-                    }
                 }
-                
+
                 if (isActive && !board[i][j] && gameActive && !miniBoardWinner) {
                     cell.addEventListener('click', () => handleUltimateCellClick(i, j));
                 }
-                
+
                 miniBoard.appendChild(cell);
             }
-            
-            if (isActive && !miniBoardWinner) {
-                miniBoard.classList.add('active-board');
-            }
-            
+
             if (miniBoardWinner) {
                 miniBoard.classList.add('won-board', miniBoardWinner.toLowerCase());
+            } else if (isActive && gameActive) {
+                miniBoard.classList.add('active-board');
             }
-            
-            gameContainer.appendChild(miniBoard);
+
+            fragment.appendChild(miniBoard);
         }
-    }
-    
-    function getWinningPattern(boardIndex) {
-        const miniBoard = board[boardIndex];
-        const winPatterns = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8],
-            [0, 3, 6], [1, 4, 7], [2, 5, 8],
-            [0, 4, 8], [2, 4, 6]
-        ];
+
+        gameContainer.appendChild(fragment);
         
-        for (const pattern of winPatterns) {
-            const [a, b, c] = pattern;
-            if (miniBoard[a] && miniBoard[a] === miniBoard[b] && miniBoard[a] === miniBoard[c]) {
-                return pattern;
+        // Mostrar solo cuando todo esté listo
+        setTimeout(() => {
+            gameContainer.style.display = 'grid';
+            gameContainer.style.visibility = 'visible';
+        }, 10);
+    }
+
+    function renderExtendedBoard() {
+        gameContainer.innerHTML = '';
+        gameContainer.className = 'game-board extended-board';
+        
+        for (let i = 0; i < 25; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'extended-cell';
+            cell.dataset.index = i;
+
+            if (board[i]) {
+                cell.textContent = board[i];
+                cell.classList.add(board[i].toLowerCase());
+            }
+
+            cell.addEventListener('click', () => handleExtendedCellClick(i));
+            gameContainer.appendChild(cell);
+        }
+        
+        // Forzar el renderizado
+        gameContainer.style.display = 'grid';
+        gameContainer.style.visibility = 'visible';
+        gameContainer.style.opacity = '1';
+    }
+
+
+    function makeUltimateComputerMove() {
+        if (!gameActive) return;
+
+        let boardIndex, cellIndex;
+
+        if (ultimateActiveBoard === null) {
+            // Puede elegir cualquier tablero
+            const availableBoards = [];
+            for (let i = 0; i < 9; i++) {
+                if (!checkMiniBoardWinner(i) && !isMiniBoardFull(i)) {
+                    availableBoards.push(i);
+                }
+            }
+            boardIndex = availableBoards[Math.floor(Math.random() * availableBoards.length)];
+        } else {
+            boardIndex = ultimateActiveBoard;
+        }
+
+        // Elegir una celda disponible en el tablero seleccionado
+        const availableCells = [];
+        for (let i = 0; i < 9; i++) {
+            if (!board[boardIndex][i]) {
+                availableCells.push(i);
             }
         }
-        
-        return [];
-    }
-    
-    function handleCellClick(index) {
-        if (!gameActive || board[index]) return;
-        
-        board[index] = currentPlayer;
-        renderClassicBoard();
-        
-        if (checkWinner()) {
-            gameActive = false;
-            updateScores(currentPlayer);
-            gameStatus.textContent = `¡Jugador ${currentPlayer} gana!`;
+        cellIndex = availableCells[Math.floor(Math.random() * availableCells.length)];
+
+        // Realizar el movimiento
+        board[boardIndex][cellIndex] = currentPlayer;
+        ultimateActiveBoard = checkMiniBoardWinner(cellIndex) ? null : cellIndex;
+
+        // Forzar reflow antes de renderizar
+        forceReflow(gameContainer);
+        renderUltimateBoard();
+
+        // Verificar estado del juego
+        const globalWinner = checkGlobalWinner();
+        if (globalWinner) {
+            handleWin(globalWinner);
             return;
         }
-        
-        if (isBoardFull()) {
-            gameActive = false;
-            updateScores('tie');
-            gameStatus.textContent = '¡Empate!';
+
+        if (isUltimateBoardFull()) {
+            handleTie();
             return;
         }
-        
-        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-        updateGameStatus();
-        
-        if (gameMode === 'pvc' && currentPlayer === 'O' && gameActive) {
-            setTimeout(makeComputerMove, 500);
-        }
+
+        switchPlayer();
     }
-    
+
+
+        function handleCellClick(index) {
+            if (!gameActive || board[index]) return;
+
+            board[index] = currentPlayer;
+            renderClassicBoard();
+
+            if (checkWinner()) {
+                handleWin(currentPlayer);
+                return;
+            }
+
+            if (isBoardFull()) {
+                handleTie();
+                return;
+            }
+
+            switchPlayer();
+
+            if (gameMode === 'pvc' && currentPlayer === 'O' && gameActive) {
+                setTimeout(makeComputerMove, 500);
+            }
+        }
+
     function handleUltimateCellClick(boardIndex, cellIndex) {
         if (!gameActive || board[boardIndex][cellIndex]) return;
         
         board[boardIndex][cellIndex] = currentPlayer;
         ultimateActiveBoard = checkMiniBoardWinner(cellIndex) ? null : cellIndex;
         
+        // Forzar un reflow antes del renderizado
+        void gameContainer.offsetHeight;
+        
         renderUltimateBoard();
         
+        // Verificar estado del juego
         const globalWinner = checkGlobalWinner();
         if (globalWinner) {
-            gameActive = false;
-            updateScores(globalWinner);
-            gameStatus.textContent = `¡Jugador ${globalWinner} gana el juego Ultimate!`;
+            handleWin(globalWinner);
             return;
         }
-        
+
         if (isUltimateBoardFull()) {
+            handleTie();
+            return;
+        }
+
+        switchPlayer();
+        
+        if (gameMode === 'pvc' && currentPlayer === 'O') {
+        setTimeout(makeUltimateComputerMove, 500);
+    }
+    }
+
+    function forceReflow(element) {
+        // Forzar reflow para asegurar el renderizado
+        void element.offsetHeight;
+    }
+
+        function handleExtendedCellClick(index) {
+            if (!gameActive || board[index]) return;
+
+            const currentSymbol = PLAYER_SYMBOLS[currentPlayerIndex];
+            board[index] = currentSymbol;
+            renderExtendedBoard();
+
+            if (checkExtendedWinner(currentSymbol)) {
+                handleWin(currentSymbol);
+                return;
+            }
+
+            if (isBoardFull()) {
+                handleTie();
+                return;
+            }
+
+            moveToNextPlayer();
+            updateGameStatus();
+
+            if (players[currentPlayerIndex] === 'ai' && gameActive) {
+                setTimeout(makeExtendedComputerMove, 500);
+            }
+        }
+
+        function handleWin(winner) {
+            gameActive = false;
+            updateScores(winner);
+
+            let winMessage;
+            if (gameVariant === 'extended') {
+                const playerType = winner === 'X' ? (players[0] === 'human' ? 'Jugador' : 'Computadora') :winner === 'O' ? (players[1] === 'human' ? 'Jugador' : 'Computadora') : (players[2] === 'human' ? 'Jugador' : 'Computadora');
+                const playerNumber = winner === 'X' ? 1 : winner === 'O' ? 2 : 3;
+                winMessage = `¡${playerType} ${playerNumber} (${winner}) gana!`;
+            } else if (winner === 'X') {
+                winMessage = '¡Jugador X gana!';
+            } else {
+                winMessage = gameMode === 'pvp' ? '¡Jugador O gana!' : '¡Computadora gana!';
+            }
+
+            gameStatus.textContent = winMessage;
+        }
+
+        function handleTie() {
             gameActive = false;
             updateScores('tie');
-            gameStatus.textContent = '¡Empate en el juego Ultimate!';
-            return;
+            gameStatus.textContent = '¡Empate!';
         }
-        
-        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-        updateGameStatus();
-        
-        if (gameMode === 'pvc' && currentPlayer === 'O' && gameActive) {
-            setTimeout(makeComputerMove, 500);
+
+        function switchPlayer() {
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            updateGameStatus();
         }
-    }
-    
-    function makeComputerMove() {
-        if (!gameActive) return;
-        
-        if (gameVariant === 'classic') {
+
+        function moveToNextPlayer() {
+            currentPlayerIndex = (currentPlayerIndex + 1) % 3;
+        }
+
+        function makeComputerMove() {
+            if (!gameActive) return;
+
             let move;
-            
+
             if (difficulty === 'easy') {
                 move = getRandomMove();
             } else if (difficulty === 'medium') {
@@ -341,261 +577,245 @@ function resetGame() {
             } else {
                 move = getBestMove();
             }
-            
+
             board[move] = 'O';
             renderClassicBoard();
-            
+
             if (checkWinner()) {
-                gameActive = false;
-                updateScores('O');
-                gameStatus.textContent = '¡La computadora gana!';
+                handleWin('O');
                 return;
             }
-            
+
             if (isBoardFull()) {
-                gameActive = false;
-                updateScores('tie');
-                gameStatus.textContent = '¡Empate!';
+                handleTie();
                 return;
             }
-            
-            currentPlayer = 'X';
-            updateGameStatus();
-        } else {
-            let boardIndex, cellIndex;
-            
+
+            switchPlayer();
+        }
+
+        function makeExtendedComputerMove() {
+            if (!gameActive) return;
+
+            const currentSymbol = PLAYER_SYMBOLS[currentPlayerIndex];
+            let move;
+
             if (difficulty === 'easy') {
-                [boardIndex, cellIndex] = getRandomUltimateMove();
+                move = getRandomExtendedMove();
             } else if (difficulty === 'medium') {
-                if (Math.random() < 0.5) {
-                    [boardIndex, cellIndex] = getBestUltimateMove();
-                } else {
-                    [boardIndex, cellIndex] = getRandomUltimateMove();
-                }
+                move = Math.random() < 0.5 ? getBestExtendedMove(currentSymbol) : getRandomExtendedMove();
             } else {
-                [boardIndex, cellIndex] = getBestUltimateMove();
+                move = getBestExtendedMove(currentSymbol);
             }
-            
-            board[boardIndex][cellIndex] = 'O';
-            ultimateActiveBoard = checkMiniBoardWinner(cellIndex) ? null : cellIndex;
-            
-            renderUltimateBoard();
-            
-            const globalWinner = checkGlobalWinner();
-            if (globalWinner) {
-                gameActive = false;
-                updateScores(globalWinner);
-                gameStatus.textContent = '¡La computadora gana el juego Ultimate!';
+
+            board[move] = currentSymbol;
+            renderExtendedBoard();
+
+            if (checkExtendedWinner(currentSymbol)) {
+                handleWin(currentSymbol);
                 return;
             }
-            
-            if (isUltimateBoardFull()) {
-                gameActive = false;
-                updateScores('tie');
-                gameStatus.textContent = '¡Empate en el juego Ultimate!';
+
+            if (isBoardFull()) {
+                handleTie();
                 return;
             }
-            
-            currentPlayer = 'X';
+
+            moveToNextPlayer();
             updateGameStatus();
-        }
-    }
-    
-    function getRandomMove() {
-        const emptyCells = [];
-        for (let i = 0; i < 9; i++) {
-            if (!board[i]) emptyCells.push(i);
-        }
-        return emptyCells[Math.floor(Math.random() * emptyCells.length)];
-    }
-    
-    function getBestMove() {
-        let bestScore = -Infinity;
-        let move;
-        
-        for (let i = 0; i < 9; i++) {
-            if (!board[i]) {
-                board[i] = 'O';
-                let score = minimax(board, 0, false);
-                board[i] = null;
-                
-                if (score > bestScore) {
-                    bestScore = score;
-                    move = i;
-                }
+
+            if (players[currentPlayerIndex] === 'ai' && gameActive) {
+                setTimeout(makeExtendedComputerMove, 500);
             }
         }
-        
-        return move;
-    }
-    
-    function minimax(board, depth, isMaximizing) {
-        const scores = {
-            'O': 1,
-            'X': -1,
-            'tie': 0
-        };
-        
-        const winner = checkWinner();
-        if (winner) {
-            return scores[winner];
+
+        function getRandomMove() {
+            const emptyCells = [];
+            for (let i = 0; i < 9; i++) {
+                if (!board[i]) emptyCells.push(i);
+            }
+            return emptyCells[Math.floor(Math.random() * emptyCells.length)];
         }
-        
-        if (isBoardFull()) {
-            return scores['tie'];
-        }
-        
-        if (isMaximizing) {
+
+        function getBestMove() {
             let bestScore = -Infinity;
+            let move;
+
             for (let i = 0; i < 9; i++) {
                 if (!board[i]) {
                     board[i] = 'O';
-                    let score = minimax(board, depth + 1, false);
+                    let score = minimax(board, 0, false);
                     board[i] = null;
-                    bestScore = Math.max(score, bestScore);
+
+                    if (score > bestScore) {
+                        bestScore = score;
+                        move = i;
+                    }
                 }
             }
-            return bestScore;
-        } else {
-            let bestScore = Infinity;
-            for (let i = 0; i < 9; i++) {
+
+            return move;
+        }
+
+        function minimax(board, depth, isMaximizing) {
+            const scores = {
+                'O': 1,
+                'X': -1,
+                'tie': 0
+            };
+
+            const winner = checkWinner();
+            if (winner) {
+                return scores[winner];
+            }
+
+            if (isBoardFull()) {
+                return scores['tie'];
+            }
+
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (!board[i]) {
+                        board[i] = 'O';
+                        let score = minimax(board, depth + 1, false);
+                        board[i] = null;
+                        bestScore = Math.max(score, bestScore);
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (!board[i]) {
+                        board[i] = 'X';
+                        let score = minimax(board, depth + 1, true);
+                        board[i] = null;
+                        bestScore = Math.min(score, bestScore);
+                    }
+                }
+                return bestScore;
+            }
+        }
+
+        function getRandomExtendedMove() {
+            const emptyCells = [];
+            for (let i = 0; i < 25; i++) {
+                if (!board[i]) emptyCells.push(i);
+            }
+            return emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        }
+
+        function getBestExtendedMove(symbol) {
+            // 1. Verificar si podemos ganar
+            for (let i = 0; i < 25; i++) {
                 if (!board[i]) {
-                    board[i] = 'X';
-                    let score = minimax(board, depth + 1, true);
+                    board[i] = symbol;
+                    if (checkExtendedWinner(symbol)) {
+                        board[i] = null;
+                        return i;
+                    }
                     board[i] = null;
-                    bestScore = Math.min(score, bestScore);
                 }
             }
-            return bestScore;
-        }
-    }
-    
-    function getRandomUltimateMove() {
-        let availableBoards = [];
-        
-        if (ultimateActiveBoard !== null) {
-            availableBoards.push(ultimateActiveBoard);
-        } else {
-            for (let i = 0; i < 9; i++) {
-                if (!checkMiniBoardWinner(i) && !isMiniBoardFull(i)) {
-                    availableBoards.push(i);
-                }
-            }
-        }
-        
-        const boardIndex = availableBoards[Math.floor(Math.random() * availableBoards.length)];
-        const emptyCells = [];
-        
-        for (let j = 0; j < 9; j++) {
-            if (!board[boardIndex][j]) {
-                emptyCells.push(j);
-            }
-        }
-        
-        const cellIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-        
-        return [boardIndex, cellIndex];
-    }
-    
-    function getBestUltimateMove() {
-        for (let i = 0; i < 9; i++) {
-            if ((ultimateActiveBoard === null || ultimateActiveBoard === i) && !checkMiniBoardWinner(i)) {
-                for (let j = 0; j < 9; j++) {
-                    if (!board[i][j]) {
-                        board[i][j] = 'O';
-                        if (checkMiniBoardWinner(i)) {
-                            board[i][j] = null;
-                            return [i, j];
+
+            // 2. Bloquear a los oponentes
+            const opponents = PLAYER_SYMBOLS.filter(s => s !== symbol);
+            for (const opponent of opponents) {
+                for (let i = 0; i < 25; i++) {
+                    if (!board[i]) {
+                        board[i] = opponent;
+                        if (checkExtendedWinner(opponent)) {
+                            board[i] = null;
+                            return i;
                         }
-                        board[i][j] = null;
+                        board[i] = null;
                     }
                 }
             }
+
+            // 3. Movimiento estratégico (centro o esquinas)
+            const center = 12;
+            if (!board[center]) return center;
+
+            const corners = [0, 4, 20, 24];
+            const emptyCorners = corners.filter(i => !board[i]);
+            if (emptyCorners.length > 0) {
+                return emptyCorners[Math.floor(Math.random() * emptyCorners.length)];
+            }
+
+            // 4. Movimiento aleatorio
+            return getRandomExtendedMove();
         }
-        
-        for (let i = 0; i < 9; i++) {
-            if ((ultimateActiveBoard === null || ultimateActiveBoard === i) && !checkMiniBoardWinner(i)) {
-                for (let j = 0; j < 9; j++) {
-                    if (!board[i][j]) {
-                        board[i][j] = 'X';
-                        if (checkMiniBoardWinner(i)) {
-                            board[i][j] = null;
-                            return [i, j];
-                        }
-                        board[i][j] = null;
-                    }
+
+        function checkWinner() {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+
+            for (const pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    return board[a];
                 }
             }
+
+            return null;
         }
-        
-        return getRandomUltimateMove();
-    }
-    
-    function checkWinner() {
-        const winPatterns = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8],
-            [0, 3, 6], [1, 4, 7], [2, 5, 8],
-            [0, 4, 8], [2, 4, 6]
-        ];
-        
-        for (const pattern of winPatterns) {
-            const [a, b, c] = pattern;
-            if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-                return board[a];
+
+        function isBoardFull() {
+            if (gameVariant === 'classic') {
+                return board.every(cell => cell !== null);
+            } else if (gameVariant === 'extended') {
+                return board.every(cell => cell !== null);
             }
+            return false;
         }
-        
-        return null;
-    }
-    
-    function isBoardFull() {
-        return board.every(cell => cell !== null);
-    }
-    
-    function checkMiniBoardWinner(boardIndex) {
+
+        function checkMiniBoardWinner(boardIndex) {
         const miniBoard = board[boardIndex];
         const winPatterns = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8],
-            [0, 3, 6], [1, 4, 7], [2, 5, 8],
-            [0, 4, 8], [2, 4, 6]
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // filas
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // columnas
+            [0, 4, 8], [2, 4, 6]             // diagonales
         ];
-        
+
         for (const pattern of winPatterns) {
             const [a, b, c] = pattern;
             if (miniBoard[a] && miniBoard[a] === miniBoard[b] && miniBoard[a] === miniBoard[c]) {
                 return miniBoard[a];
             }
         }
-        
         return null;
     }
-    
-    function checkGlobalWinner() {
+
+        function checkGlobalWinner() {
         const globalBoard = [];
         for (let i = 0; i < 9; i++) {
             globalBoard[i] = checkMiniBoardWinner(i);
         }
-        
+
         const winPatterns = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8],
-            [0, 3, 6], [1, 4, 7], [2, 5, 8],
-            [0, 4, 8], [2, 4, 6]
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // filas
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // columnas
+            [0, 4, 8], [2, 4, 6]             // diagonales
         ];
-        
+
         for (const pattern of winPatterns) {
             const [a, b, c] = pattern;
             if (globalBoard[a] && globalBoard[a] === globalBoard[b] && globalBoard[a] === globalBoard[c]) {
                 return globalBoard[a];
             }
         }
-        
         return null;
     }
-    
-    function isMiniBoardFull(boardIndex) {
+
+        function isMiniBoardFull(boardIndex) {
         return board[boardIndex].every(cell => cell !== null);
     }
-    
+
     function isUltimateBoardFull() {
         for (let i = 0; i < 9; i++) {
             if (!checkMiniBoardWinner(i) && !isMiniBoardFull(i)) {
@@ -604,30 +824,152 @@ function resetGame() {
         }
         return true;
     }
-    
+
+    function checkExtendedWinner(symbol) {
+        const size = 5;
+        const winLength = 3;
+        let winningCells = [];
+
+    // Verificar filas
+    for (let row = 0; row < size; row++) {
+        for (let col = 0; col <= size - winLength; col++) {
+            let win = true;
+            for (let i = 0; i < winLength; i++) {
+                if (board[row * size + col + i] !== symbol) {
+                    win = false;
+                    break;
+                }
+            }
+            if (win) {
+                for (let i = 0; i < winLength; i++) {
+                    winningCells.push(row * size + col + i);
+                }
+                highlightWinningCells(winningCells);
+                return true;
+            }
+        }
+    }
+
+    // Verificar columnas
+    for (let col = 0; col < size; col++) {
+        for (let row = 0; row <= size - winLength; row++) {
+            let win = true;
+            for (let i = 0; i < winLength; i++) {
+                if (board[(row + i) * size + col] !== symbol) {
+                    win = false;
+                    break;
+                }
+            }
+            if (win) {
+                for (let i = 0; i < winLength; i++) {
+                    winningCells.push((row + i) * size + col);
+                }
+                highlightWinningCells(winningCells);
+                return true;
+            }
+        }
+    }
+
+    // Verificar diagonales (\)
+    for (let row = 0; row <= size - winLength; row++) {
+        for (let col = 0; col <= size - winLength; col++) {
+            let win = true;
+            for (let i = 0; i < winLength; i++) {
+                if (board[(row + i) * size + (col + i)] !== symbol) {
+                    win = false;
+                    break;
+                }
+            }
+            if (win) {
+                for (let i = 0; i < winLength; i++) {
+                    winningCells.push((row + i) * size + (col + i));
+                }
+                highlightWinningCells(winningCells);
+                return true;
+            }
+        }
+    }
+
+    // Verificar diagonales (/)
+    for (let row = 0; row <= size - winLength; row++) {
+        for (let col = winLength - 1; col < size; col++) {
+            let win = true;
+            for (let i = 0; i < winLength; i++) {
+                if (board[(row + i) * size + (col - i)] !== symbol) {
+                    win = false;
+                    break;
+                }
+            }
+            if (win) {
+                for (let i = 0; i < winLength; i++) {
+                    winningCells.push((row + i) * size + (col - i));
+                }
+                highlightWinningCells(winningCells);
+                return true;
+            }
+        }
+    }
+
+    return false;
+    }
+
+    function highlightWinningCells(cellIndexes) {
+        const cells = document.querySelectorAll('.extended-cell');
+        cellIndexes.forEach(index => {
+            cells[index].classList.add('winning-cell');
+        });
+    }
+
     function updateScores(winner) {
         if (winner === 'X') {
             scores.X++;
         } else if (winner === 'O') {
             scores.O++;
+        } else if (winner === 'Y') {
+            scores.Y++;
         } else {
             scores.tie++;
         }
         updateScoreDisplay();
         saveScores();
     }
-    
+
     function updateGameStatus() {
-        if (gameVariant === 'classic') {
-            gameStatus.textContent = `Turno del Jugador ${currentPlayer}`;
+        if (!gameActive) return;
+
+        if (gameVariant === 'extended') {
+            const playerNumber = currentPlayerIndex + 1;
+            const symbol = PLAYER_SYMBOLS[currentPlayerIndex];
+            const playerType = players[currentPlayerIndex] === 'human' ? 'Jugador' : 'Computadora';
+            gameStatus.innerHTML = `Turno de <span class="player-${symbol.toLowerCase()}">${playerType} ${playerNumber} (${symbol})</span> <span class="current-player-indicator"></span>`;
+        } else if (gameVariant === 'classic') {
+            gameStatus.innerHTML = `Turno del <span class="player-${currentPlayer.toLowerCase()}">Jugador ${currentPlayer}</span> <span class="current-player-indicator"></span>`;
         } else {
-            gameStatus.textContent = `Turno del Jugador ${currentPlayer}`;
+            gameStatus.innerHTML = `Turno del <span class="player-${currentPlayer.toLowerCase()}">Jugador ${currentPlayer}</span> <span class="current-player-indicator"></span>`;
             if (ultimateActiveBoard !== null) {
                 gameStatus.textContent += ` (Tablero ${ultimateActiveBoard + 1})`;
             }
         }
     }
-    
-    // Inicializar la interfaz
-    difficultySection.style.display = 'none';
+
+    function getWinningPattern(boardIndex) {
+        const miniBoard = board[boardIndex];
+        const winPatterns = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        for (const pattern of winPatterns) {
+            const [a, b, c] = pattern;
+            if (miniBoard[a] && miniBoard[a] === miniBoard[b] && miniBoard[a] === miniBoard[c]) {
+                return pattern;
+            }
+        }
+
+        return [];
+    }
+
+    // Call updatePlayersConfig initially to set correct difficulty display for extended if it's the default
+    updatePlayersConfig();
 });

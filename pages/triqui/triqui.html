@@ -52,14 +52,26 @@
         </nav>
     </div>
 
-    
     <div class="config-panel">
         <div class="panel-section">
             <h3>Variante</h3>
-            <select id="gameVariant" class="styled-select">
+            <!-- Dentro del select de variantes, agregar la nueva opción -->
+            <select id="gameVariant" class="styled-select"> 
+                <option value="" selected disabled hidden>Seleccione una variante</option>               
                 <option value="classic">Clásico</option>
                 <option value="ultimate">Ultimate</option>
+                <option value="extended">Extendido (5x5)</option>
             </select>
+
+            <!-- Agregar nueva sección para configuración de jugadores -->
+            <div class="panel-section" id="playersSection">
+                <h3>Jugadores</h3>
+                <select id="playersConfig" class="styled-select">
+                    <option value="3human">3 Jugadores Humanos</option>
+                    <option value="2human1ai">2 Jugadores + 1 IA</option>
+                    <option value="1human2ai">1 Jugador + 2 IA</option>
+                </select>
+            </div>
         </div>
         
         <div class="panel-section">
@@ -86,10 +98,11 @@
     <div class="game-container">
         <div class="game-board" id="gameBoard"></div>
         
+        <!-- Modificar el game-info para soportar 3 jugadores -->
         <div class="game-info">
             <div id="gameStatus" class="status-message">Esperando para comenzar...</div>
             
-            <div class="score-panel">
+            <div class="score-panel" id="scorePanel">
                 <div class="score-item">
                     <span class="player-x">Jugador X</span>
                     <span id="scoreX" class="score-value">0</span>
@@ -97,6 +110,10 @@
                 <div class="score-item">
                     <span class="player-o">Jugador O</span>
                     <span id="scoreO" class="score-value">0</span>
+                </div>
+                <div class="score-item" id="scoreYItem" style="display: none;">
+                    <span class="player-y">Jugador Y</span>
+                    <span id="scoreY" class="score-value">0</span>
                 </div>
                 <div class="score-item">
                     <span>Empates</span>

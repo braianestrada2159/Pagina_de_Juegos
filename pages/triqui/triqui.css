@@ -32,6 +32,11 @@ body {
     padding: 10px 0;
     font-weight: 600;
 }
+/*.titulo {
+    color: #667eea;
+    font-size: 40px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}*/
 
 .config-panel {
     grid-area: opciones;
@@ -142,23 +147,31 @@ body {
 }
 
 .game-board {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     background: white;
     border-radius: 12px;
-    padding: 15px;
+    padding: 20px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.05);
     border: 1px solid rgba(203, 213, 225, 0.5);
+    min-height: 400px;
 }
 
-/* Estilos para el tablero clásico */
 .classic-board {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
     gap: 10px;
+    width: 330px;
+    height: 330px;
+    margin: 0 auto;
 }
 
 .classic-cell {
-    width: 100px;
-    height: 100px;
+    width: 100%;
+    height: 100%;
+    min-height: 100px;
     background: white;
     border: 2px solid #e2e8f0;
     border-radius: 10px;
@@ -192,22 +205,38 @@ body {
 .ultimate-board {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    grid-template-rows: repeat(3, 1fr);
+    gap: 10px;
+    width: 450px;
+    height: 450px;
+    margin: 0 auto;
     background: #4f46e5;
-    padding: 10px;
+    padding: 15px;
     border-radius: 15px;
     border: 3px solid #4338ca;
+    display: none;
 }
 
 .mini-board {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
     gap: 2px;
     background: rgba(255, 255, 255, 0.9);
     padding: 3px;
     border-radius: 8px;
     position: relative;
-    min-height: 80px;
+
+    will-change: transform, box-shadow;
+}
+
+.mini-board.won-board {
+    pointer-events: none;
+}
+
+.mini-board.active-board {
+    box-shadow: 0 0 0 4px #10b981, 0 0 20px rgba(16, 185, 129, 0.3);
+    transform: translateY(-2px);
 }
 
 .mini-board::before {
@@ -223,16 +252,18 @@ body {
 }
 
 .mini-cell {
-    height: 25px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
     background: white;
     border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
     transition: all 0.2s;
+    aspect-ratio: 1/1; /* Mantener relación cuadrada */
+
+    will-change: transform, background-color;
 }
 
 .mini-cell:hover {
@@ -242,12 +273,24 @@ body {
 
 .mini-cell.x {
     color: #3b82f6;
-    text-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
 }
 
 .mini-cell.o {
     color: #ef4444;
-    text-shadow: 0 1px 3px rgba(239, 68, 68, 0.3);
+}
+
+.mini-board::after {
+    content: attr(data-board-number);
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    color: white;
+    background: #4f46e5;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
 }
 
 .active-board {
@@ -281,18 +324,27 @@ body {
     }
 }
 
-.mini-board::after {
-    content: attr(data-board-number);
-    position: absolute;
-    top: -12px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.7rem;
-    color: white;
-    background: #4f46e5;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-weight: 600;
+/* Ajustes responsive */
+@media (max-width: 600px) {
+    .ultimate-board {
+        width: 350px;
+        height: 350px;
+        padding: 10px;
+        gap: 6px;
+    }
+    .mini-cell {
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .ultimate-board {
+        width: 300px;
+        height: 300px;
+    }
+    .mini-cell {
+        font-size: 1rem;
+    }
 }
 
 .game-info {
@@ -601,4 +653,130 @@ body {
         padding: 12px 16px;
         font-size: 15px;
     }
+}
+
+.extended-board {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 8px;
+    width: 330px;
+    height: 330px;
+    margin: 0 auto;
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    border: 1px solid rgba(203, 213, 225, 0.5);
+}
+
+.extended-cell {
+    width: 100%;
+    height: 100%;
+    min-height: 50px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.extended-cell:hover {
+    background: #f8fafc;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* Colores para los 3 jugadores */
+.extended-cell.x {
+    color: #3b82f6;
+    text-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.extended-cell.o {
+    color: #ef4444;
+    text-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+}
+
+.extended-cell.y {
+    color: #10b981;
+    text-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+
+
+/* Ajustes responsive */
+@media (max-width: 600px) {
+    .classic-board, .extended-board {
+        width: 280px;
+        height: 280px;
+    }
+    .classic-cell {
+        min-height: 80px;
+        font-size: 2.5rem;
+    }
+    .extended-cell {
+        min-height: 40px;
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .classic-board, .extended-board {
+        width: 240px;
+        height: 240px;
+    }
+    .classic-cell {
+        min-height: 70px;
+        font-size: 2rem;
+    }
+    .extended-cell {
+        min-height: 30px;
+        font-size: 1.2rem;
+    }
+}
+
+/* Añade estas reglas al final del archivo CSS */
+.classic-board, 
+.extended-board,
+.ultimate-board {
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Asegura que el contenedor del juego tenga el tamaño correcto */
+.game-board {
+    min-height: 400px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Asegura que los tableros se muestren correctamente */
+.classic-board {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    width: 330px;
+    height: 330px;
+}
+
+.extended-board {
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    width: 330px;
+    height: 330px;
+}
+
+.ultimate-board {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    width: 450px;
+    height: 450px;
 }
