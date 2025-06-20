@@ -379,6 +379,8 @@ button:hover {
     justify-content: center;
     position: relative;
     transition: all 0.2s ease;
+
+    cursor: default;
 }
 
 .square.light {
@@ -393,27 +395,27 @@ button:hover {
 
 .square.selected {
     background-color: #3d8aff !important;
-    box-shadow: inset 0 0 0 3px #003a92;
+    box-shadow: inset 0 0 0 5px #0400ff;
 }
 
 .square.possible-move {
-    background-color: #7fc97f !important;
-    box-shadow: inset 0 0 0 3px #4a9c4a;
+    background-color: #6fc46f !important;
+    box-shadow: inset 0 0 0 5px #28ff28;
 }
 
 .square.in-check {
     background-color: #ff4444 !important;
-    box-shadow: inset 0 0 0 3px #cc0000;
+    box-shadow: inset 0 0 0 5px #cc0000;
 }
 
 .square.possible-capture {
     background-color: #ff5722 !important;
-    box-shadow: inset 0 0 0 3px #e64a19;
+    box-shadow: inset 0 0 0 5px #ff0505;
 }
 
 .square.in-check {
     background-color: #ff4444 !important;
-    box-shadow: inset 0 0 0 3px #cc0000;
+    box-shadow: inset 0 0 0 5px #cc0000;
     animation: pulse 1s infinite;
 }
 
@@ -421,6 +423,8 @@ button:hover {
     opacity: 0.9;
     transform: scale(1.05);
     z-index: 2;
+
+    cursor: pointer;
 }
 
 /* Piezas de ajedrez mejoradas */
@@ -434,6 +438,8 @@ button:hover {
     width: 100%;
     height: 100%;
     filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+
+    cursor: pointer;
 }
 
 /* Piezas blancas */
