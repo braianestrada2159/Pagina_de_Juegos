@@ -33,16 +33,21 @@ document.addEventListener('keydown', function(event) {
 
 //código para el tablero de ajedrez
 // Configuración del juego
-        let gameMode = 'friend';
-        let difficulty = 'medium';
-        let currentPlayer = 'white';
-        let selectedSquare = null;
-        let board = [];
-        let gameOver = false;
-        let moveHistory = [];
-        let promotionCallback = null;
-        let enPassantTarget = null;
-        const pieces = {
+let halfMoveClock = 0; // Contador para la regla de 50 movimientos
+let fullMoveNumber = 1; // Contador de movimientos completos
+let positionHistory = [];
+let gameMode = 'friend';
+let difficulty = 'medium';
+let currentPlayer = 'white';
+let selectedSquare = null;
+let board = [];
+let gameOver = false;
+let moveHistory = [];
+let promotionCallback = null;
+let enPassantTarget = null;
+
+// Representación de las piezas
+const pieces = {
     white: {
         king: '♚', queen: '♛', rook: '♜', bishop: '♝', knight: '♞', pawn: '♟'
     },
@@ -94,6 +99,7 @@ function initializeBoard() {
     enPassantTarget = null;
 }
 
+// Crear el tablero visual
 function createBoard() {
     const boardElement = document.getElementById('chessboard');
     boardElement.innerHTML = '';
@@ -147,6 +153,7 @@ function findKingPosition(color) {
     return null;
 }
 
+// Manejar clic en una casilla del tablero
 function handleSquareClick(row, col) {
     if (gameOver) return;
     if (gameMode === 'ai' && currentPlayer === 'black') return;
@@ -180,6 +187,7 @@ function handleSquareClick(row, col) {
     }
 }
 
+// Seleccionar nueva pieza
 function selectNewPiece(row, col) {
     clearSelection(); // Limpiar selección previa primero
     const pieceData = board[row][col];
@@ -191,6 +199,7 @@ function selectNewPiece(row, col) {
     }
 }
 
+// Limpiar selección actual
 function clearSelection() {
     if (selectedSquare) {
         const square = document.querySelector(
@@ -204,17 +213,20 @@ function clearSelection() {
     clearHighlights();
 }
 
+// Resaltar casilla
 function highlightSquare(row, col, className) {
     const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
     square.classList.add(className);
 }
 
+// Limpiar resaltados
 function clearHighlights() {
     document.querySelectorAll('.square').forEach(square => {
         square.classList.remove('selected', 'possible-move', 'possible-capture');
     });
 }
 
+// Mostrar movimientos posibles
 function showPossibleMoves(row, col) {
     const moves = getPossibleMoves(row, col);
     moves.forEach(move => {
@@ -294,6 +306,48 @@ function canCastle(color, side) {
     return true;
 }
 
+// Corrección en la función canCastle
+function canCastle(color, side) {
+    const row = color === 'white' ? 7 : 0;
+    const kingCol = 4;
+    const rookCol = side === 'king' ? 7 : 0;
+    const step = side === 'king' ? 1 : -1;
+    
+    // Verificar que ni el rey ni la torre se hayan movido
+    const king = board[row][kingCol];
+    const rook = board[row][rookCol];
+    
+    if (!king || king.piece !== 'king' || king.hasMoved) return false;
+    if (!rook || rook.piece !== 'rook' || rook.hasMoved) return false;
+    
+    // Verificar que las casillas intermedias estén vacías
+    for (let col = kingCol + step; col !== rookCol; col += step) {
+        if (board[row][col] !== null) return false;
+    }
+    
+    // Verificar que el rey no esté en jaque
+    if (isInCheck(color)) return false;
+    
+    // Verificar que el rey no pase por casillas en jaque
+    for (let col = kingCol + step; col !== kingCol + 2 * step; col += step) {
+        // Simular movimiento temporal del rey
+        const originalKingPos = board[row][kingCol];
+        const originalNewPos = board[row][col];
+        
+        board[row][col] = originalKingPos;
+        board[row][kingCol] = null;
+        
+        const inCheck = isInCheck(color);
+        
+        // Revertir movimiento simulado
+        board[row][kingCol] = originalKingPos;
+        board[row][col] = originalNewPos;
+        
+        if (inCheck) return false;
+    } 
+    return true;
+}
+
 // Validar movimiento específico por pieza
 function isPieceValidMove(piece, fromRow, fromCol, toRow, toCol) {
     const rowDiff = toRow - fromRow;
@@ -301,6 +355,7 @@ function isPieceValidMove(piece, fromRow, fromCol, toRow, toCol) {
     const absRowDiff = Math.abs(rowDiff);
     const absColDiff = Math.abs(colDiff);
 
+    // Verificar si el movimiento es diagonal
     switch (piece) {
         case 'pawn':
             return isValidPawnMove(fromRow, fromCol, toRow, toCol);
@@ -311,7 +366,15 @@ function isPieceValidMove(piece, fromRow, fromCol, toRow, toCol) {
         case 'queen':
             return (rowDiff === 0 || colDiff === 0 || absRowDiff === absColDiff) && isPathClear(fromRow, fromCol, toRow, toCol);
         case 'king':
-            return absRowDiff <= 1 && absColDiff <= 1;
+            //return absRowDiff <= 1 && absColDiff <= 1;
+            // Movimiento normal del rey (una casilla en cualquier dirección)
+            if (absRowDiff <= 1 && absColDiff <= 1) return true;
+
+            // Movimiento de enroque: solo permitir movimiento de 2 columnas en la misma fila
+            if (fromRow === toRow && absColDiff === 2) return true;
+
+    // Cualquier otro movimiento es ilegal
+    return false;
         case 'knight':
             return (absRowDiff === 2 && absColDiff === 1) || (absRowDiff === 1 && absColDiff === 2);
         default:
@@ -319,6 +382,7 @@ function isPieceValidMove(piece, fromRow, fromCol, toRow, toCol) {
     }
 }
 
+// Validar movimiento de peón
 function isValidPawnMove(fromRow, fromCol, toRow, toCol) {
     const pieceData = board[fromRow][fromCol];
     const direction = pieceData.color === 'white' ? -1 : 1;
@@ -344,10 +408,10 @@ function isValidPawnMove(fromRow, fromCol, toRow, toCol) {
             return true;
         }
     }
-
     return false;
 }
 
+// Verificar si el camino está despejado para movimientos de torre, alfil o reina
 function isPathClear(fromRow, fromCol, toRow, toCol) {
     const rowStep = toRow > fromRow ? 1 : toRow < fromRow ? -1 : 0;
     const colStep = toCol > fromCol ? 1 : toCol < fromCol ? -1 : 0;
@@ -364,18 +428,27 @@ function isPathClear(fromRow, fromCol, toRow, toCol) {
     return true;
 }
 
-// Obtener movimientos posibles
+// Obtener movimientos posibles para una pieza
 function getPossibleMoves(row, col) {
     const moves = [];
-    
+    const pieceData = board[row][col];
+
     for (let toRow = 0; toRow < 8; toRow++) {
         for (let toCol = 0; toCol < 8; toCol++) {
+            // DESCARTAR movimientos mayores a 2 casillas horizontal o vertical
+            if (pieceData.piece === 'king') {
+                const absRowDiff = Math.abs(row - toRow);
+                const absColDiff = Math.abs(col - toCol);
+                if (!((absRowDiff <= 1 && absColDiff <= 1) || (absRowDiff === 0 && absColDiff === 2))) {
+                    continue; // ignorar movimientos inválidos
+                }
+            }
+            // DESCARTAR movimientos mayores a 2 casillas horizontal o vertical
             if (isValidMove(row, col, toRow, toCol)) {
                 moves.push({ row: toRow, col: toCol });
             }
         }
     }
-    
     return moves;
 }
 
@@ -384,10 +457,21 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
     const pieceData = board[fromRow][fromCol];
     const targetData = board[toRow][toCol];
     
+    // Actualizar contadores de movimientos
+    if (pieceData.piece === 'pawn' || targetData) {
+        halfMoveClock = 0; // Resetear si hay movimiento de peón o captura
+    } else {
+        halfMoveClock++;
+    }
+    
+    if (pieceData.color === 'black') {
+        fullMoveNumber++;
+    }
+
     // Marcar que la pieza se ha movido (para enroque)
     if (pieceData && !pieceData.hasMoved) {
         pieceData.hasMoved = true;
-    }
+    }   
     
     // Registrar movimiento
     const move = {
@@ -409,6 +493,11 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
         board[toRow][rookToCol] = board[toRow][rookFromCol];
         board[toRow][rookFromCol] = null;
         board[toRow][rookToCol].hasMoved = true;
+        
+        // Actualizar la representación visual de la torre
+        setTimeout(() => {
+            createBoard(); // Esto asegura que el tablero se actualice correctamente
+        }, 0);
     }
     
     // Manejar captura al paso
@@ -440,35 +529,137 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
         };
         showPromotionModal(toRow, toCol);
         return;
-    }
-    
+    }   
     finishMove(move);
 }
 
+// Verificar material insuficiente
+function isInsufficientMaterial() {
+    const pieces = {
+        white: { pawn: 0, knight: 0, bishop: 0, rook: 0, queen: 0 },
+        black: { pawn: 0, knight: 0, bishop: 0, rook: 0, queen: 0 }
+    };
+    
+    let whiteBishops = [];
+    let blackBishops = [];
+    
+    // Contar piezas
+    for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+            const piece = board[row][col];
+            if (piece) {
+                if (piece.piece !== 'king') {
+                    pieces[piece.color][piece.piece]++;
+                    
+                    // Guardar color de casilla de los alfiles
+                    if (piece.piece === 'bishop') {
+                        const squareColor = (row + col) % 2 === 0 ? 'light' : 'dark';
+                        if (piece.color === 'white') {
+                            whiteBishops.push(squareColor);
+                        } else {
+                            blackBishops.push(squareColor);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Rey contra rey
+    if (pieces.white.pawn === 0 && pieces.white.knight === 0 && pieces.white.bishop === 0 && 
+        pieces.white.rook === 0 && pieces.white.queen === 0 &&
+        pieces.black.pawn === 0 && pieces.black.knight === 0 && pieces.black.bishop === 0 && 
+        pieces.black.rook === 0 && pieces.black.queen === 0) {
+        return true;
+    }
+    
+    // Rey y alfil contra rey
+    if ((pieces.white.bishop === 1 && pieces.white.pawn === 0 && pieces.white.knight === 0 && 
+        pieces.white.rook === 0 && pieces.white.queen === 0 &&
+        pieces.black.pawn === 0 && pieces.black.knight === 0 && pieces.black.bishop === 0 && 
+        pieces.black.rook === 0 && pieces.black.queen === 0) ||
+        (pieces.black.bishop === 1 && pieces.black.pawn === 0 && pieces.black.knight === 0 && 
+        pieces.black.rook === 0 && pieces.black.queen === 0 &&
+        pieces.white.pawn === 0 && pieces.white.knight === 0 && pieces.white.bishop === 0 && 
+        pieces.white.rook === 0 && pieces.white.queen === 0)) {
+        return true;
+    }
+    
+    // Rey y caballo contra rey
+    if ((pieces.white.knight === 1 && pieces.white.pawn === 0 && pieces.white.bishop === 0 && 
+        pieces.white.rook === 0 && pieces.white.queen === 0 &&
+        pieces.black.pawn === 0 && pieces.black.knight === 0 && pieces.black.bishop === 0 && 
+        pieces.black.rook === 0 && pieces.black.queen === 0) ||
+        (pieces.black.knight === 1 && pieces.black.pawn === 0 && pieces.black.bishop === 0 && 
+        pieces.black.rook === 0 && pieces.black.queen === 0 &&
+        pieces.white.pawn === 0 && pieces.white.knight === 0 && pieces.white.bishop === 0 && 
+        pieces.white.rook === 0 && pieces.white.queen === 0)) {
+        return true;
+    }
+    
+    // Rey y alfil contra rey y alfil (mismo color de casilla)
+    if (pieces.white.bishop === 1 && pieces.black.bishop === 1 &&
+        pieces.white.pawn === 0 && pieces.white.knight === 0 && pieces.white.rook === 0 && pieces.white.queen === 0 &&
+        pieces.black.pawn === 0 && pieces.black.knight === 0 && pieces.black.rook === 0 && pieces.black.queen === 0) {
+        if (whiteBishops[0] === blackBishops[0]) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+// Finalizar movimiento
 function finishMove(move) {
     moveHistory.push(move);
     updateMoveHistory();
     clearSelection();
     createBoard();
     
+    console.log("Verificando jaque para:", currentPlayer);
+
     // Cambiar turno
     currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
     updateGameInfo();
     
-    // Verificar fin del juego
-    if (isCheckmate(currentPlayer)) {
+    const nextPlayer = currentPlayer === 'white' ? 'black' : 'white';
+
+    // Verificar fin del juego para el próximo jugador
+    if (isCheckmate(nextPlayer)) {
         gameOver = true;
         document.getElementById('gameStatus').textContent = 
-            `¡Jaque mate! Ganan las ${currentPlayer === 'white' ? 'negras' : 'blancas'}`;
-    } else if (isStalemate(currentPlayer)) {
+            `¡Jaque mate! Ganan las ${currentPlayer === 'white' ? 'blancas' : 'negras'}`;
+    } else if (isStalemate(nextPlayer)) {
         gameOver = true;
         document.getElementById('gameStatus').textContent = '¡Empate por ahogado!';
-    } else if (isInCheck(currentPlayer)) {
+    } else if (isInCheck(nextPlayer)) {
         document.getElementById('gameStatus').textContent = '¡Jaque!';
     } else {
         document.getElementById('gameStatus').textContent = 'Juego en progreso';
     }
+
+    // Verificar regla de 50 movimientos
+    if (halfMoveClock >= 50) {
+        gameOver = true;
+        document.getElementById('gameStatus').textContent = '¡Empate por regla de 50 movimientos!';
+    }
+        // Guardar posición actual en el historial
+    const positionKey = JSON.stringify(board);
+    positionHistory.push(positionKey);
     
+    // Verificar si la posición actual ha aparecido 3 veces
+    const count = positionHistory.filter(pos => pos === positionKey).length;
+    if (count >= 3) {
+        gameOver = true;
+        document.getElementById('gameStatus').textContent = '¡Empate por repetición de posición!';
+    }
+
+    // Verificar material insuficiente
+    if (isInsufficientMaterial()) {
+        gameOver = true;
+        document.getElementById('gameStatus').textContent = '¡Empate por material insuficiente!';
+    }
+
     // Turno de la IA
     if (gameMode === 'ai' && currentPlayer === 'black' && !gameOver) {
         setTimeout(makeAIMove, 500);
@@ -545,7 +736,6 @@ function isInCheck(color) {
             }
         }
     }
-    
     return false;
 }
 
@@ -573,9 +763,9 @@ function makeAIMove() {
     }
 }
 
+// Obtener todos los movimientos posibles para el color dado
 function getAllPossibleMoves(color) {
-    const moves = [];
-    
+    const moves = [];   
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
             const pieceData = board[row][col];
@@ -594,11 +784,11 @@ function getAllPossibleMoves(color) {
                 });
             }
         }
-    }
-    
+    }   
     return moves;
 }
 
+// Obtener el mejor movimiento para la IA
 function getBestMoveSimple(moves) {
     // Priorizar capturas
     const captures = moves.filter(move => move.captured);
@@ -609,6 +799,7 @@ function getBestMoveSimple(moves) {
     return moves[Math.floor(Math.random() * moves.length)];
 }
 
+// Obtener el mejor movimiento avanzado para la IA
 function getBestMoveAdvanced(moves) {
     let bestMove = null;
     let bestScore = -Infinity;
@@ -624,6 +815,7 @@ function getBestMoveAdvanced(moves) {
     return bestMove;
 }
 
+// Evaluar un movimiento
 function evaluateMove(move) {
     let score = 0;
     
@@ -655,6 +847,7 @@ function updateGameInfo() {
         currentPlayer === 'white' ? 'Blancas' : 'Negras';
 }
 
+// Actualizar historial de movimientos
 function updateMoveHistory() {
     const moveList = document.getElementById('moveList');
     moveList.innerHTML = '';
@@ -687,6 +880,9 @@ function startNewGame() {
     gameOver = false;
     moveHistory = [];
     enPassantTarget = null;
+    positionHistory = [];
+    halfMoveClock = 0;
+    fullMoveNumber = 1;
     
     initializeBoard();
     createBoard();
