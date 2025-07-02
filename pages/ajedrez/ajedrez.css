@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Huninn&family=LXGW+Marker+Gothic&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 
+/* Estilos globales */
 * {
     margin: 0;
     padding: 0;
@@ -7,8 +8,8 @@
     font-family: "Poppins", sans-serif;
 }
 
+/* Estilo para el título */
 .titulo {
-    /*position: absolute;*/
     position: fixed;
     font-size: 40px;
     top: 20px;
@@ -24,6 +25,7 @@
     font-weight: 600;
 }
 
+/* Estilos generales */
 body {
     font-family: 'Poppins', sans-serif;
     background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
@@ -36,6 +38,7 @@ body {
     padding-top: 15px; /* Espacio para los elementos fijos */
     padding-bottom: 50px;
 }
+
 /* Contenedor principal que agrupa tablero e info */
 .main-game-container {
     display: flex;
@@ -47,6 +50,7 @@ body {
     padding: 0 20px;
     box-sizing: border-box;
 }
+
 /* Ajustar el contenedor de información */
 .info-container {
     flex: 1;
@@ -54,6 +58,7 @@ body {
     position: sticky;
     top: 180px;
 }
+
 /* Añadir estos nuevos estilos */
 .main-container {
     display: flex;
@@ -61,12 +66,13 @@ body {
     gap: 40px;
     width: 100%;
     max-width: 1200px;
-    /*margin: 20px auto 50px;*/
     margin-top: 20px;
     margin-left: 150px;
     padding: 0 20px;
     box-sizing: border-box;
 }
+
+/* Contenedor del tablero de ajedrez */
 .chessboard-container {
     flex: 1;
     max-width: 600px;
@@ -75,13 +81,14 @@ body {
     padding: 20px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 }
+
+/* Contenedor principal del juego */
 .side-panel {
     width: 300px;
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
-
 
 /* Animación y estilos para el menú desplegable */
 .menu-container {
@@ -91,6 +98,7 @@ body {
     z-index: 1000;
 }
 
+/* Botón del menú */
 .menu-toggle {
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
     backdrop-filter: blur(10px);
@@ -106,12 +114,14 @@ body {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
+/* Efecto de hover para el botón del menú */
 .menu-toggle:hover {
     transform: scale(1.05);
     background: linear-gradient(135deg, #ec4899, #f59e0b);
     box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4);
 }
 
+/* Icono de hamburguesa */
 .hamburger {
     width: 24px;
     height: 18px;
@@ -119,6 +129,7 @@ body {
     transition: all 0.3s ease;
 }
 
+/* Estilos para las líneas del icono de hamburguesa */
 .hamburger span {
     display: block;
     position: absolute;
@@ -132,33 +143,40 @@ body {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Primer span para la línea superior */
 .hamburger span:nth-child(1) {
     top: 0px;
 }
 
+/* Segundo span para la línea del medio */
 .hamburger span:nth-child(2) {
     top: 8px;
 }
 
+/* Tercer span para la línea inferior */
 .hamburger span:nth-child(3) {
     top: 16px;
 }
 
+/* Cambiar el color del icono al pasar el ratón */
 .menu-open .hamburger span:nth-child(1) {
     top: 8px;
     transform: rotate(135deg);
 }
 
+/* Ocultar el segundo span al abrir el menú */
 .menu-open .hamburger span:nth-child(2) {
     opacity: 0;
     left: -60px;
 }
 
+/* Cambiar la posición del tercer span para que se cruce con el primero */
 .menu-open .hamburger span:nth-child(3) {
     top: 8px;
     transform: rotate(-135deg);
 }
 
+/* Estilos para el menú desplegable */
 .dropdown-menu {
     position: absolute;
     top: 70px;
@@ -176,12 +194,14 @@ body {
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
 
+/* Mostrar el menú desplegable al hacer clic en el botón */
 .menu-open .dropdown-menu {
     opacity: 1;
     visibility: visible;
     transform: translateY(0) scale(1);
 }
 
+/* Estilos para los elementos del menú */
 .menu-item {
     display: flex;
     align-items: center;
@@ -197,6 +217,7 @@ body {
     overflow: hidden;
 }
 
+/* Efecto de fondo deslizante */
 .menu-item::before {
     content: '';
     position: absolute;
@@ -208,20 +229,24 @@ body {
     transition: left 0.5s;
 }
 
+/* Efecto de deslizamiento del fondo del menú */
 .menu-item:hover::before {
     left: 100%;
 }
 
+/* Efecto de hover en el menú */
 .menu-item:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: translateX(-5px);
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
 }
 
+/* Efecto de clic en el menú */
 .menu-item:active {
     transform: translateX(-5px) scale(0.98);
 }
 
+/* Icono del menú */
 .menu-icon {
     width: 24px;
     height: 24px;
@@ -230,16 +255,18 @@ body {
     transition: transform 0.3s ease;
 }
 
+/* Efecto de hover para el icono del menú */
 .menu-item:hover .menu-icon {
     transform: scale(1.1);
 }
-
+/* Animación de deslizamiento desde la derecha para los elementos del menú */
 .menu-open .menu-item:nth-child(1) { animation: slideInRight 0.3s 0.1s both; }
 .menu-open .menu-item:nth-child(2) { animation: slideInRight 0.3s 0.2s both; }
 .menu-open .menu-item:nth-child(3) { animation: slideInRight 0.3s 0.3s both; }
 .menu-open .menu-item:nth-child(4) { animation: slideInRight 0.3s 0.4s both; }
 .menu-open .menu-item:nth-child(5) { animation: slideInRight 0.3s 0.5s both; }
 
+/* Animación de deslizamiento desde la derecha */
 @keyframes slideInRight {
     from {
         opacity: 0;
@@ -250,13 +277,14 @@ body {
         transform: translateX(0);
     }
 }
-/* */
+/* Animación de pulso para el estado de jaque */
 @keyframes pulse {
     0% { box-shadow: inset 0 0 0 3px #cc0000; }
     50% { box-shadow: inset 0 0 0 6px #cc0000; }
     100% { box-shadow: inset 0 0 0 3px #cc0000; }
 }
 
+/* Estilos para el menú desplegable */
 @media (max-width: 768px) {
     .menu-container {
         top: 15px;
@@ -287,6 +315,7 @@ body {
     flex-direction: column;
 }
 
+/* Estilo para el contenedor de controles */
 .controls {
     display: flex;
     justify-content: flex-start; /* Cambiado de space-between a flex-start */
@@ -298,6 +327,7 @@ body {
     width: fit-content; /* Ajustar al contenido */
 }
 
+/* Estilo para el grupo de controles */
 .control-group {           
     grid-area: opciones;
     background: rgba(232, 218, 253, 0.7);
@@ -311,6 +341,7 @@ body {
     width: 200px; /* Ancho fijo */
 }
 
+/* Estilo para botones y select */
 select, button {
     padding: 10px 15px;
     border: none;
@@ -320,11 +351,13 @@ select, button {
     transition: all 0.3s ease;
 }
 
+/* Estilo para select */
 select {
     background: #f8f9fa;
     border: 2px solid #e9ecef;
 }
 
+/* Efecto de hover para select */
 button {
     background: linear-gradient(45deg, #667eea, #764ba2);
     color: white;
@@ -333,28 +366,54 @@ button {
     letter-spacing: 1px;
 }
 
+/* Efecto de hover para botones */
 button:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
+/* Estilo para el contenedor de información del juego */
 .game-info {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 15px;
     padding: 20px;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
 }
 
+/* Estilo para el título de la información del juego */
 .current-player {
     font-weight: bold;
     font-size: 1.2em;
 }
 
+/* Estilo para el estado del juego */
 .status {
     font-size: 1.1em;
-    color: #666;
+    font-weight: bold;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-top: 10px;
+    display: inline-block;
+    transition: all 0.3s ease;
 }
 
+/* Estilo para jaque */
+.status.check {
+    background-color: #fff3cd;
+    color: #856404;
+    animation: pulseWarning 1.5s infinite;
+}
+
+/* Estilo para jaque mate */
+.status.checkmate {
+    background-color: #f8d7da;
+    color: #721c24;
+    animation: pulseDanger 1.5s infinite;
+    font-size: 1.4em;
+}
+
+/* Estilos para el tablero de ajedrez */
 .chessboard {
     width: 100%;
     max-width: 500px;
@@ -367,10 +426,13 @@ button:hover {
         inset 0 0 20px rgba(0, 0, 0, 0.2);
     background-color: #666262;
 }
+
+/* Estilos para las filas del tablero */
 .board-row {
     display: flex;
 }
 
+/* Estilos para las casillas del tablero */
 .square {
     width: 62.5px;
     height: 62.5px;
@@ -379,51 +441,57 @@ button:hover {
     justify-content: center;
     position: relative;
     transition: all 0.2s ease;
-
     cursor: default;
 }
 
+/* Efecto de hover para casillas oscuras */
 .square.light {
     background-color: #77adfd;
     background-image: linear-gradient(to bottom right, #77adfd, #77adfdb7);
 }
 
+/* Efecto de hover para casillas claras */
 .square.dark {
     background-color: #424242;
     background-image: linear-gradient(to bottom right, #424242, #5c5c5c);
 }
 
+/* Efecto de selección */
 .square.selected {
     background-color: #3d8aff !important;
     box-shadow: inset 0 0 0 5px #0400ff;
 }
 
+/* Efecto de movimiento */
 .square.possible-move {
     background-color: #6fc46f !important;
     box-shadow: inset 0 0 0 5px #28ff28;
 }
 
+/* Efecto de captura */
 .square.in-check {
     background-color: #ff4444 !important;
     box-shadow: inset 0 0 0 5px #cc0000;
 }
 
+/* Efecto de captura posible */
 .square.possible-capture {
     background-color: #ff5722 !important;
     box-shadow: inset 0 0 0 5px #ff0505;
 }
 
+/* Efecto de jaque */
 .square.in-check {
     background-color: #ff4444 !important;
     box-shadow: inset 0 0 0 5px #cc0000;
     animation: pulse 1s infinite;
 }
 
+/* Efecto al hacer clic en una casilla */
 .square:hover {
     opacity: 0.9;
     transform: scale(1.05);
     z-index: 2;
-
     cursor: pointer;
 }
 
@@ -458,8 +526,6 @@ button:hover {
         -1px -1px 1px rgba(0, 0, 0, 0.3);
 }
 
-
-
 /* Efecto al mover piezas */
 .piece.moving {
     transform: scale(1.2);
@@ -472,6 +538,7 @@ button:hover {
     z-index: 10;
 }
 
+/* Estilos para el historial de movimientos */
 .move-history {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 15px;
@@ -482,17 +549,20 @@ button:hover {
     max-height: 400px;
 }
 
+/* Título del historial de movimientos */
 .move-history h3 {
     margin-bottom: 10px;
     color: #333;
 }
 
+/* Lista de movimientos */
 .move-list {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
 }
 
+/* Elementos de movimiento */
 .move-item {
     background: white;
     padding: 5px 10px;
@@ -501,6 +571,7 @@ button:hover {
     border: 1px solid #ddd;
 }
 
+/* Estilos para el modal */
 .modal {
     display: none;
     position: fixed;
@@ -512,6 +583,7 @@ button:hover {
     z-index: 1000;
 }
 
+/* Contenido del modal */
 .modal-content {
     position: absolute;
     top: 50%;
@@ -525,11 +597,13 @@ button:hover {
     width: 90%;
 }
 
+/* Botón de cerrar modal */
 .modal h2 {
     margin-bottom: 20px;
     color: #333;
 }
 
+/* Botones dentro del modal */
 .promotion-pieces {
     display: flex;
     justify-content: center;
@@ -537,6 +611,7 @@ button:hover {
     margin: 20px 0;
 }
 
+/* Piezas de promoción */
 .promotion-piece {
     font-size: 3em;
     padding: 10px;
@@ -546,11 +621,13 @@ button:hover {
     transition: all 0.3s ease;
 }
 
+/* Efecto al hacer hover en las piezas de promoción */
 .promotion-piece:hover {
     border-color: #667eea;
     background: #f0f0f0;
 }
 
+/* Estilos para el tablero de ajedrez en pantallas pequeñas */
 @media (max-width: 768px) {
     .game-container {
         margin-top: 20px;
@@ -563,7 +640,7 @@ button:hover {
 
 }
 
-
+/* Contenedor de controles a la izquierda */
 .left-controls {
     margin-top: 40px;
     position: absolute;
@@ -580,6 +657,7 @@ button:hover {
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
+/* Contenedor de controles */
 .left-controls .control-group {
     background: rgba(232, 218, 253, 0.7);
     padding: 15px;
@@ -591,10 +669,12 @@ button:hover {
     box-shadow: 0 5px 15px rgba(0,0,0,0.05);
 }
 
+/* Botones dentro de los controles */
 .left-controls button {
     align-self: flex-start;
 }
 
+/* Estilos para pantallas pequeñas */
 @media (max-width: 1024px) {
     .main-container {
         flex-direction: column;
@@ -612,6 +692,7 @@ button:hover {
     }
 }
 
+/* Estilos para pantallas grandes */
 @media (max-width: 1024px) {
     .main-game-container {
         flex-direction: column;
@@ -630,6 +711,7 @@ button:hover {
     }
 }
 
+/* Estilos para dispositivos móviles */
 @media (max-width: 768px) {
     .left-controls {
         top: 80px;
@@ -648,4 +730,17 @@ button:hover {
     .main-container {
         margin-top: 20px;
     }
+}
+
+/* Animaciones de pulso para estados de juego */
+@keyframes pulseWarning {
+    0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+}
+
+@keyframes pulseDanger {
+    0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
 }

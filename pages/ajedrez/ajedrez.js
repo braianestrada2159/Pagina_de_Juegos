@@ -58,8 +58,10 @@ const pieces = {
 
 // Inicializar tablero
 function initializeBoard() {
+    // Crear el tablero vacío
     board = [
         [
+            // Piezas negras
             {piece: 'rook', color: 'black', hasMoved: false}, 
             {piece: 'knight', color: 'black'}, 
             {piece: 'bishop', color: 'black'}, 
@@ -86,6 +88,7 @@ function initializeBoard() {
             {piece: 'pawn', color: 'white'}, {piece: 'pawn', color: 'white'}
         ],
         [
+            // Representación de las piezas blancas
             {piece: 'rook', color: 'white', hasMoved: false}, 
             {piece: 'knight', color: 'white'}, 
             {piece: 'bishop', color: 'white'}, 
@@ -99,21 +102,23 @@ function initializeBoard() {
     enPassantTarget = null;
 }
 
-// Crear el tablero visual
+// Inicializar el juego
 function createBoard() {
     const boardElement = document.getElementById('chessboard');
     boardElement.innerHTML = '';
+    
+    // Verificar jaque para ambos bandos (para mostrar correctamente en el tablero)
+    const whiteInCheck = isInCheck('white');
+    const blackInCheck = isInCheck('black');
+    let whiteKingPos = whiteInCheck ? findKingPosition('white') : null;
+    let blackKingPos = blackInCheck ? findKingPosition('black') : null;
 
-    const kingInCheck = isInCheck(currentPlayer);
-    let kingPosition = null;
-    if (kingInCheck) {
-        kingPosition = findKingPosition(currentPlayer);
-    }
-
+    // Crear filas y columnas del tablero
     for (let row = 0; row < 8; row++) {
         const rowElement = document.createElement('div');
         rowElement.className = 'board-row';
 
+        // Crear casillas del tablero, Alternar colores de las casillas
         for (let col = 0; col < 8; col++) {
             const square = document.createElement('div');
             square.className = `square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
@@ -121,10 +126,15 @@ function createBoard() {
             square.dataset.col = col;
             square.onclick = () => handleSquareClick(row, col);
 
-            if (kingPosition && kingPosition.row === row && kingPosition.col === col) {
+            // Resaltar reyes en jaque
+            if (whiteKingPos && whiteKingPos.row === row && whiteKingPos.col === col) {
+                square.classList.add('in-check');
+            }
+            if (blackKingPos && blackKingPos.row === row && blackKingPos.col === col) {
                 square.classList.add('in-check');
             }
 
+            // Agregar pieza si existe
             const pieceData = board[row][col];
             if (pieceData) {
                 const pieceElement = document.createElement('div');
@@ -132,7 +142,7 @@ function createBoard() {
                 pieceElement.dataset.color = pieceData.color;
                 pieceElement.textContent = pieces[pieceData.color][pieceData.piece];
                 square.appendChild(pieceElement);
-            }          
+            }
 
             rowElement.appendChild(square);
         }
@@ -237,12 +247,14 @@ function showPossibleMoves(row, col) {
 }
 
 // Validar movimiento
-function isValidMove(fromRow, fromCol, toRow, toCol) {
+function isValidMove(fromRow, fromCol, toRow, toCol, color = currentPlayer, customBoard = board) {
     if (toRow < 0 || toRow > 7 || toCol < 0 || toCol > 7) return false;
     
+    // Verificar que el color de la pieza sea el del jugador actual
     const pieceData = board[fromRow][fromCol];
     const targetData = board[toRow][toCol];
     
+    // Verificar que haya una pieza en la posición de origen
     if (!pieceData) return false;
     if (targetData && pieceData.color === targetData.color) return false;
     
@@ -366,7 +378,7 @@ function isPieceValidMove(piece, fromRow, fromCol, toRow, toCol) {
         case 'queen':
             return (rowDiff === 0 || colDiff === 0 || absRowDiff === absColDiff) && isPathClear(fromRow, fromCol, toRow, toCol);
         case 'king':
-            //return absRowDiff <= 1 && absColDiff <= 1;
+
             // Movimiento normal del rey (una casilla en cualquier dirección)
             if (absRowDiff <= 1 && absColDiff <= 1) return true;
 
@@ -464,6 +476,7 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
         halfMoveClock++;
     }
     
+    // Actualizar número de movimientos completos
     if (pieceData.color === 'black') {
         fullMoveNumber++;
     }
@@ -604,50 +617,57 @@ function isInsufficientMaterial() {
         if (whiteBishops[0] === blackBishops[0]) {
             return true;
         }
-    }
-    
+    }    
     return false;
 }
 
-// Finalizar movimiento
+// Actualizar información del juego
 function finishMove(move) {
     moveHistory.push(move);
     updateMoveHistory();
     clearSelection();
-    createBoard();
     
-    console.log("Verificando jaque para:", currentPlayer);
-
-    // Cambiar turno
-    currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-    updateGameInfo();
+    // Verificar condiciones de fin de juego para el jugador cuyo turno es ahora
+    const opponent = currentPlayer === 'white' ? 'black' : 'white';
     
-    const nextPlayer = currentPlayer === 'white' ? 'black' : 'white';
-
-    // Verificar fin del juego para el próximo jugador
-    if (isCheckmate(nextPlayer)) {
+    // Actualizar el estado del juego
+    // Verificar jaque mate, ahogado, jaque y otras condiciones
+    if (isCheckmate(opponent)) {
         gameOver = true;
         document.getElementById('gameStatus').textContent = 
             `¡Jaque mate! Ganan las ${currentPlayer === 'white' ? 'blancas' : 'negras'}`;
-    } else if (isStalemate(nextPlayer)) {
+        document.getElementById('gameStatus').style.backgroundColor = '#f8d7da';
+        document.getElementById('gameStatus').style.color = '#721c24';
+    } else if (isStalemate(opponent)) {
         gameOver = true;
         document.getElementById('gameStatus').textContent = '¡Empate por ahogado!';
-    } else if (isInCheck(nextPlayer)) {
-        document.getElementById('gameStatus').textContent = '¡Jaque!';
+    } else if (isInCheck(opponent)) {
+        document.getElementById('gameStatus').textContent = 
+            `¡Jaque a las ${opponent === 'white' ? 'blancas' : 'negras'}!`;
+        document.getElementById('gameStatus').style.backgroundColor = '#fff3cd';
+        document.getElementById('gameStatus').style.color = '#856404';
     } else {
         document.getElementById('gameStatus').textContent = 'Juego en progreso';
+        document.getElementById('gameStatus').style.backgroundColor = '';
+        document.getElementById('gameStatus').style.color = '';
     }
 
-    // Verificar regla de 50 movimientos
+    // Cambiar turno después de verificar las condiciones
+    currentPlayer = opponent;
+    updateGameInfo();
+    createBoard();
+
+    // Otras verificaciones (50 movimientos, repetición, material insuficiente)
     if (halfMoveClock >= 50) {
         gameOver = true;
         document.getElementById('gameStatus').textContent = '¡Empate por regla de 50 movimientos!';
     }
-        // Guardar posición actual en el historial
+    
+    // Verificar repetición de posición
     const positionKey = JSON.stringify(board);
     positionHistory.push(positionKey);
     
-    // Verificar si la posición actual ha aparecido 3 veces
+    // Limitar el historial a las últimas 10 posiciones
     const count = positionHistory.filter(pos => pos === positionKey).length;
     if (count >= 3) {
         gameOver = true;
@@ -679,33 +699,38 @@ function promote(pieceType) {
     board[square.row][square.col] = {piece: pieceType, color: pieceData.color};
     document.getElementById('promotionModal').style.display = 'none';
     
+    // Actualizar el tablero
     if (promotionCallback) {
         promotionCallback();
         promotionCallback = null;
     }
 }
 
-// Verificar jaque mate
+// Actualizar información del juego
 function isCheckmate(color) {
+    // Primero verificar si el rey está en jaque
     if (!isInCheck(color)) return false;
     
+    // Verificar si hay algún movimiento legal posible
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
             const pieceData = board[row][col];
             if (pieceData && pieceData.color === color) {
                 const moves = getPossibleMoves(row, col);
-                if (moves.length > 0) return false;
+                if (moves.length > 0) {
+                    return false; // Hay al menos un movimiento legal
+                }
             }
         }
     }
-    
-    return true;
+    return true; // No hay movimientos legales y el rey está en jaque
 }
 
 // Verificar ahogado
 function isStalemate(color) {
     if (isInCheck(color)) return false;
     
+    // Verificar si hay algún movimiento legal posible
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
             const pieceData = board[row][col];
@@ -719,18 +744,20 @@ function isStalemate(color) {
     return true;
 }
 
-// Verificar jaque
+// Verificar si el rey está en jaque
 function isInCheck(color) {
-    // Encontrar el rey
     const kingPos = findKingPosition(color);
     if (!kingPos) return false;
     
     // Verificar si alguna pieza enemiga puede capturar el rey
+    const opponentColor = color === 'white' ? 'black' : 'white';
+    
+    // Recorrer el tablero en busca de piezas enemigas
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
             const pieceData = board[row][col];
-            if (pieceData && pieceData.color !== color) {
-                if (isValidMove(row, col, kingPos.row, kingPos.col)) {
+            if (pieceData && pieceData.color === opponentColor) {
+                if (isValidMove(row, col, kingPos.row, kingPos.col, opponentColor)) {
                     return true;
                 }
             }
@@ -739,13 +766,30 @@ function isInCheck(color) {
     return false;
 }
 
+
+// Nueva función auxiliar para validar ataques
+function isValidAttack(fromRow, fromCol, toRow, toCol, pieceType) {
+    // Implementación específica para cada tipo de pieza
+    switch (pieceType) {
+        case 'pawn':
+            return isValidPawnAttack(fromRow, fromCol, toRow, toCol);
+        case 'knight':
+            return isValidKnightMove(fromRow, fromCol, toRow, toCol);
+        // Otros tipos de piezas
+        default:
+            return isPieceValidMove(pieceType, fromRow, fromCol, toRow, toCol);
+    }
+}
+
 // IA del juego
 function makeAIMove() {
     const moves = getAllPossibleMoves('black');
     if (moves.length === 0) return;
     
+    // Seleccionar el mejor movimiento según la dificultad
     let bestMove;
     
+    // Determinar la dificultad de la IA
     switch (difficulty) {
         case 'easy':
             bestMove = moves[Math.floor(Math.random() * moves.length)];
@@ -758,6 +802,7 @@ function makeAIMove() {
             break;
     }
     
+    // Si se encontró un movimiento válido, ejecutarlo
     if (bestMove) {
         makeMove(bestMove.fromRow, bestMove.fromCol, bestMove.toRow, bestMove.toCol);
     }
@@ -765,10 +810,14 @@ function makeAIMove() {
 
 // Obtener todos los movimientos posibles para el color dado
 function getAllPossibleMoves(color) {
-    const moves = [];   
+    const moves = []; 
+    
+    // Recorrer el tablero y obtener movimientos para cada pieza del color dado
     for (let row = 0; row < 8; row++) {
+        // Verificar si la fila es par o impar para alternar colores de casillas
         for (let col = 0; col < 8; col++) {
             const pieceData = board[row][col];
+            // Verificar si la pieza es del color del jugador actual
             if (pieceData && pieceData.color === color) {
                 const pieceMoves = getPossibleMoves(row, col);
                 pieceMoves.forEach(move => {
@@ -794,8 +843,8 @@ function getBestMoveSimple(moves) {
     const captures = moves.filter(move => move.captured);
     if (captures.length > 0) {
         return captures[Math.floor(Math.random() * captures.length)];
-    }
-    
+    }    
+    // Si no hay capturas, seleccionar un movimiento aleatorio
     return moves[Math.floor(Math.random() * moves.length)];
 }
 
@@ -804,8 +853,10 @@ function getBestMoveAdvanced(moves) {
     let bestMove = null;
     let bestScore = -Infinity;
     
+    // Evaluar cada movimiento y seleccionar el mejor
     moves.forEach(move => {
         const score = evaluateMove(move);
+        // Si el movimiento es una captura, aumentar la puntuación
         if (score > bestScore) {
             bestScore = score;
             bestMove = move;
@@ -821,24 +872,87 @@ function evaluateMove(move) {
     
     // Valores de las piezas
     const pieceValues = {
-        pawn: 1, knight: 3, bishop: 3, rook: 5, queen: 9, king: 100
+        pawn: 10, knight: 30, bishop: 30, rook: 50, queen: 90, king: 900
     };
+    
+    // Tablas de valoración posicional
+    const pawnTable = [
+        [0,  0,  0,  0,  0,  0,  0,  0],
+        [5, 10, 10,-20,-20, 10, 10,  5],
+        [5, -5,-10,  0,  0,-10, -5,  5],
+        [0,  0,  0, 20, 20,  0,  0,  0],
+        [5,  5, 10, 25, 25, 10,  5,  5],
+        [10,10, 20, 30, 30, 20, 10, 10],
+        [50,50, 50, 50, 50, 50, 50, 50],
+        [0,  0,  0,  0,  0,  0,  0,  0]
+    ];
+    
+    // Tabla de valoración para caballos
+    const knightTable = [
+        [-50,-40,-30,-30,-30,-30,-40,-50],
+        [-40,-20,  0,  5,  5,  0,-20,-40],
+        [-30,  5, 10, 15, 15, 10,  5,-30],
+        [-30,  0, 15, 20, 20, 15,  0,-30],
+        [-30,  5, 15, 20, 20, 15,  5,-30],
+        [-30,  0, 10, 15, 15, 10,  0,-30],
+        [-40,-20,  0,  0,  0,  0,-20,-40],
+        [-50,-40,-30,-30,-30,-30,-40,-50]
+    ];
     
     // Puntos por captura
     if (move.captured) {
-        score += pieceValues[move.captured] * 10;
+        score += pieceValues[move.captured];
     }
     
-    // Puntos por posición central
-    const centerDistance = Math.abs(move.toRow - 3.5) + Math.abs(move.toCol - 3.5);
-    score += (7 - centerDistance) * 0.5;
+    // Valor posicional de la pieza
+    if (move.piece === 'pawn') {
+        score += pawnTable[move.toRow][move.toCol];
+    } else if (move.piece === 'knight') {
+        score += knightTable[move.toRow][move.toCol];
+    }
+    
+    // Bonus por desarrollo temprano de piezas
+    if (fullMoveNumber < 10) {
+        if (move.piece === 'knight' || move.piece === 'bishop') {
+            score += 5;
+        }
+        if (move.fromRow === (move.piece.color === 'white' ? 7 : 0) && 
+            (move.fromCol === 0 || move.fromCol === 7)) {
+            score += 10; // Bonus por sacar la torre
+        }
+    }
     
     // Penalización por exponer el rey
-    if (move.piece === 'king') {
-        score -= 2;
+    if (move.piece === 'king' && fullMoveNumber < 20) {
+        score -= 15;
+    }
+    
+    // Bonus por jaque
+    const tempBoard = JSON.parse(JSON.stringify(board));
+    tempBoard[move.toRow][move.toCol] = tempBoard[move.fromRow][move.fromCol];
+    tempBoard[move.fromRow][move.fromCol] = null;
+    
+    // Verificar si el movimiento pone al rey enemigo en jaque
+    const opponentColor = currentPlayer === 'white' ? 'black' : 'white';
+    if (isSquareUnderAttack(findKingPosition(opponentColor).row, findKingPosition(opponentColor).col, opponentColor, tempBoard)) {
+        score += 5;
     }
     
     return score;
+}
+// Nueva función auxiliar para verificar si una casilla está bajo ataque
+function isSquareUnderAttack(row, col, color, customBoard = board) {
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const piece = customBoard[r][c];
+            if (piece && piece.color !== color) {
+                if (isValidMove(r, c, row, col, customBoard)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 // Actualizar información del juego
@@ -852,6 +966,7 @@ function updateMoveHistory() {
     const moveList = document.getElementById('moveList');
     moveList.innerHTML = '';
     
+    // Limpiar historial previo
     moveHistory.forEach((move, index) => {
         const moveElement = document.createElement('div');
         moveElement.className = 'move-item';
@@ -866,6 +981,7 @@ function updateMoveHistory() {
             }
         }
         
+        // Agregar información de promoción si aplica
         moveElement.textContent = moveText;
         moveList.appendChild(moveElement);
     });
@@ -884,6 +1000,7 @@ function startNewGame() {
     halfMoveClock = 0;
     fullMoveNumber = 1;
     
+    // Reiniciar el tablero
     initializeBoard();
     createBoard();
     updateGameInfo();
