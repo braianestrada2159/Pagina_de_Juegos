@@ -434,8 +434,12 @@ button:hover {
 
 /* Estilos para las casillas del tablero */
 .square {
-    width: 62.5px;
-    height: 62.5px;
+    /*width: 62.5px;
+    height: 62.5px;*/
+    width: min(calc(100vw / 8), 80px);  /* máximo 80px */
+    height: min(calc(100vw / 8), 80px);
+    max-width: 62.5px;        /* Límite en pantallas grandes */
+    max-height: 62.5px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -497,7 +501,8 @@ button:hover {
 
 /* Piezas de ajedrez mejoradas */
 .piece {
-    font-size: 2.8em;
+    /*font-size: 2.8em;*/
+    font-size: min(calc(100vw / 12), 60px); /* Escala con pantalla */
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
     transition: all 0.3s ease;
     display: flex;
@@ -638,6 +643,17 @@ button:hover {
         font-size: 2em;
     }
 
+}
+
+/* Estilos para el tablero de ajedrez en pantallas muy pequeñas */
+@media (max-width: 480px) {
+    .square {
+        width: calc(95vw / 8);
+        height: calc(95vw / 8);
+    }
+    .piece {
+        font-size: calc(95vw / 14);
+    }
 }
 
 /* Contenedor de controles a la izquierda */

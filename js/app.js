@@ -27,3 +27,8 @@ document.addEventListener('DOMContentLoaded', function() {
         body.appendChild(particle);
     }
 });
+
+// Función para abrir enlaces en la misma pestaña
+function openLink(url) {
+    window.location.href = url;
+}
